@@ -1,26 +1,23 @@
 -- Drop the procedure if it already exists
 DROP PROCEDURE IF EXISTS ComputeAverageWeightedScoreForUsers;
 
--- Create the ComputeAverageWeightedScoreForUsers stored procedure
+-- Create the procedure
 DELIMITER //
+
 CREATE PROCEDURE ComputeAverageWeightedScoreForUsers()
 BEGIN
-    DECLARE v_user_id INT;
-    DECLARE done INT DEFAULT FALSE;
-    DECLARE user_cursor CURSOR FOR SELECT id FROM users;
-    DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
-
-    OPEN user_cursor;
-
-    read_loop: LOOP
-        FETCH user_cursor INTO v_user_id;
-        IF done THEN
-            LEAVE read_loop;
-        END IF;
-
-        CALL ComputeAverageWeightedScoreForUser(v_user_id);
-    END LOOP;
-
-    CLOSE user_cursor;
+    -- Update the average_score for each user based on weighted scores
+    UPDATE users u
+    JOIN (
+        SELECT 
+            c.user_id,
+            SUM(c.score * p.weight) / SUM(p.weight) AS weighted_avg
+        FROM corrections c
+        JOIN projects p ON c.project_id = p.id
+        GROUP BY c.user_id
+    ) sub ON u.id = sub.user_id
+    SET u.average_score = sub.weighted_avg;
 END //
+
+-- Reset the delimiter
 DELIMITER ;
