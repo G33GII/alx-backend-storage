@@ -1,3 +1,6 @@
+-- Drop the procedure if it already exists
+DROP PROCEDURE IF EXISTS ComputeAverageWeightedScoreForUsers;
+
 -- Create the ComputeAverageWeightedScoreForUsers stored procedure
 DELIMITER //
 CREATE PROCEDURE ComputeAverageWeightedScoreForUsers()
