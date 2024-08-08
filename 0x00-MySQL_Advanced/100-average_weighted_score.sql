@@ -1,38 +1,29 @@
--- Create the ComputeAverageWeightedScoreForUser stored procedure
-DELIMITER / / CREATE PROCEDURE ComputeAverageWeightedScoreForUser(IN p_user_id INT) BEGIN DECLARE v_total_weighted_score FLOAT;
+DELIMITER $$
 
-DECLARE v_total_weight INT;
+CREATE PROCEDURE ComputeAverageWeightedScoreForUser(IN user_id INT)
+BEGIN
+    DECLARE total_weight INT DEFAULT 0;
+    DECLARE weighted_score_sum FLOAT DEFAULT 0;
+    DECLARE average_weighted_score FLOAT DEFAULT 0;
 
-DECLARE v_average_weighted_score FLOAT;
-
--- Calculate total weighted score and total weight
-SELECT
-    SUM(c.score * p.weight),
-    SUM(p.weight) INTO v_total_weighted_score,
-    v_total_weight
-FROM
-    corrections c
+    -- Calculate the sum of the weighted scores and total weight for the given user
+    SELECT SUM(p.weight * c.score), SUM(p.weight)
+    INTO weighted_score_sum, total_weight
+    FROM corrections c
     JOIN projects p ON c.project_id = p.id
-WHERE
-    c.user_id = p_user_id;
+    WHERE c.user_id = user_id;
 
--- Compute the average weighted score
-IF v_total_weight > 0 THEN
-SET
-    v_average_weighted_score = v_total_weighted_score / v_total_weight;
+    -- Compute the average weighted score
+    IF total_weight > 0 THEN
+        SET average_weighted_score = weighted_score_sum / total_weight;
+    ELSE
+        SET average_weighted_score = 0;
+    END IF;
 
-ELSE
-SET
-    v_average_weighted_score = 0;
+    -- Update the user's average_score
+    UPDATE users
+    SET average_score = average_weighted_score
+    WHERE id = user_id;
+END $$
 
-END IF;
-
--- Update the average_score for the user
-UPDATE
-    users
-SET
-    average_score = v_average_weighted_score
-WHERE
-    id = p_user_id;
-
-END / / DELIMITER;
+DELIMITER ;
