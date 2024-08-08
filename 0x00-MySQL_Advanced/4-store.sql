@@ -7,3 +7,4 @@ BEGIN
     SET quantity = quantity - NEW.number
     WHERE name = NEW.item_name;
 END;
+DELIMITER;
