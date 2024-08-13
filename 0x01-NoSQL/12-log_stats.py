@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# my comment
+"""Prints statistics about Nginx logs stored in MongoDB"""
 
 from pymongo import MongoClient
 
