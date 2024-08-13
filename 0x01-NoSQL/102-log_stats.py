@@ -1,37 +1,38 @@
 #!/usr/bin/env python3
-"""Script to generate statistics from the nginx logs stored in MongoDB."""
+"""
+Provides statistics about Nginx logs stored in MongoDB.
+"""
 
 from pymongo import MongoClient
 
 def log_stats():
+    """
+    Function that provides some stats about Nginx logs stored in MongoDB.
+    """
     client = MongoClient('mongodb://127.0.0.1:27017')
-    db = client.logs
-    nginx_collection = db.nginx
+    nginx_collection = client.logs.nginx
 
-    # Total number of logs
+    # Count total logs
     total_logs = nginx_collection.count_documents({})
+    print(f"{total_logs} logs")
 
-    # Method count
+    # Count logs per method
     methods = ["GET", "POST", "PUT", "PATCH", "DELETE"]
-    method_counts = {method: nginx_collection.count_documents({'method': method}) for method in methods}
+    print("Methods:")
+    for method in methods:
+        count = nginx_collection.count_documents({"method": method})
+        print(f"\tmethod {method}: {count}")
 
-    # Number of logs with method=GET and path=/status
-    status_check_count = nginx_collection.count_documents({'method': 'GET', 'path': '/status'})
+    # Count specific status check
+    status_check = nginx_collection.count_documents({"method": "GET", "path": "/status"})
+    print(f"{status_check} status check")
 
-    # Top 10 most present IPs
-    pipeline = [
+    # Find the top 10 IPs
+    top_ips = nginx_collection.aggregate([
         {"$group": {"_id": "$ip", "count": {"$sum": 1}}},
         {"$sort": {"count": -1}},
         {"$limit": 10}
-    ]
-    top_ips = list(nginx_collection.aggregate(pipeline))
-
-    # Output the results
-    print(f"{total_logs} logs")
-    print("Methods:")
-    for method in methods:
-        print(f"\tmethod {method}: {method_counts[method]}")
-    print(f"{status_check_count} status check")
+    ])
 
     print("IPs:")
     for ip in top_ips:
