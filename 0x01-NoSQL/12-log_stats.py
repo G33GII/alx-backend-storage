@@ -3,6 +3,7 @@
 
 from pymongo import MongoClient
 
+
 def log_stats():
     """Prints statistics about Nginx logs stored in MongoDB"""
     client = MongoClient('mongodb://127.0.0.1:27017')
@@ -21,5 +22,6 @@ def log_stats():
         print(f"\tmethod {method}: {count}")
 
     # Count documents with method=GET and path=/status
-    status_check = collection.count_documents({"method": "GET", "path": "/status"})
+    status_check = collection.count_documents(
+        {"method": "GET", "path": "/status"})
     print(f"{status_check} status check")
