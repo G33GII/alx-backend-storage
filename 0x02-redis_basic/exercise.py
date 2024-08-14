@@ -6,6 +6,7 @@ import uuid
 from typing import Union, Callable, Optional
 from functools import wraps
 
+
 def count_calls(method: Callable) -> Callable:
     """Decorator to count how many times a method is called"""
     @wraps(method)
@@ -14,6 +15,7 @@ def count_calls(method: Callable) -> Callable:
         self._redis.incr(key)
         return method(self, *args, **kwargs)
     return wrapper
+
 
 def call_history(method: Callable) -> Callable:
     """Decorator to store the history of inputs and outputs for a function"""
@@ -31,6 +33,7 @@ def call_history(method: Callable) -> Callable:
         return output
     return wrapper
 
+
 class Cache:
     """Cache class for storing data using Redis"""
 
@@ -42,13 +45,16 @@ class Cache:
     @call_history
     @count_calls
     def store(self, data: Union[str, bytes, int, float]) -> str:
-        """Store the input data in Redis using a random key and return the key"""
+        """Store the input data in Redis using a random
+        key and return the key"""
         key = str(uuid.uuid4())
         self._redis.set(key, data)
         return key
 
-    def get(self, key: str, fn: Optional[Callable] = None) -> Union[str, bytes, int, float, None]:
-        """Get data from Redis by key and optionally convert it using the provided function"""
+    def get(self, key: str, fn: Optional[Callable] = None
+            ) -> Union[str, bytes, int, float, None]:
+        """Get data from Redis by key and optionally
+        convert it using the provided function"""
         data = self._redis.get(key)
         if data is None:
             return None
@@ -63,6 +69,7 @@ class Cache:
     def get_int(self, key: str) -> Union[int, None]:
         """Get an integer from Redis by key"""
         return self.get(key, fn=int)
+
 
 def replay(method: Callable):
     """Display the history of calls of a particular function"""
