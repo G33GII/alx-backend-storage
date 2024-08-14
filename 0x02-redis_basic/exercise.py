@@ -7,15 +7,7 @@ from typing import Union, Callable, Optional
 from functools import wraps
 
 def count_calls(method: Callable) -> Callable:
-    """
-    Decorator to count how many times a method is called
-
-    Args:
-        method: The method to be decorated
-
-    Returns:
-        Callable: The wrapped method
-    """
+    """Decorator to count how many times a method is called"""
     @wraps(method)
     def wrapper(self, *args, **kwargs):
         key = method.__qualname__
@@ -24,27 +16,16 @@ def count_calls(method: Callable) -> Callable:
     return wrapper
 
 def call_history(method: Callable) -> Callable:
-    """
-    Decorator to store the history of inputs and outputs for a function
-
-    Args:
-        method: The method to be decorated
-
-    Returns:
-        Callable: The wrapped method
-    """
+    """Decorator to store the history of inputs and outputs for a function"""
     @wraps(method)
     def wrapper(self, *args, **kwargs):
         input_key = f"{method.__qualname__}:inputs"
         output_key = f"{method.__qualname__}:outputs"
 
-        # Store input arguments
         self._redis.rpush(input_key, str(args))
 
-        # Execute the wrapped function
         output = method(self, *args, **kwargs)
 
-        # Store output
         self._redis.rpush(output_key, str(output))
 
         return output
@@ -61,30 +42,13 @@ class Cache:
     @call_history
     @count_calls
     def store(self, data: Union[str, bytes, int, float]) -> str:
-        """
-        Store the input data in Redis using a random key and return the key
-
-        Args:
-            data: The data to be stored (can be str, bytes, int, or float)
-
-        Returns:
-            str: The randomly generated key used to store the data
-        """
+        """Store the input data in Redis using a random key and return the key"""
         key = str(uuid.uuid4())
         self._redis.set(key, data)
         return key
 
     def get(self, key: str, fn: Optional[Callable] = None) -> Union[str, bytes, int, float, None]:
-        """
-        Get data from Redis by key and optionally convert it using the provided function
-
-        Args:
-            key: The key to retrieve data from Redis
-            fn: Optional callable to convert the data
-
-        Returns:
-            The data from Redis, optionally converted by fn, or None if the key doesn't exist
-        """
+        """Get data from Redis by key and optionally convert it using the provided function"""
         data = self._redis.get(key)
         if data is None:
             return None
@@ -93,25 +57,32 @@ class Cache:
         return data
 
     def get_str(self, key: str) -> Union[str, None]:
-        """
-        Get a string from Redis by key
-
-        Args:
-            key: The key to retrieve data from Redis
-
-        Returns:
-            The string data from Redis, or None if the key doesn't exist
-        """
+        """Get a string from Redis by key"""
         return self.get(key, fn=lambda d: d.decode("utf-8"))
 
     def get_int(self, key: str) -> Union[int, None]:
-        """
-        Get an integer from Redis by key
-
-        Args:
-            key: The key to retrieve data from Redis
-
-        Returns:
-            The integer data from Redis, or None if the key doesn't exist
-        """
+        """Get an integer from Redis by key"""
         return self.get(key, fn=int)
+
+def replay(method: Callable):
+    """Display the history of calls of a particular function"""
+    redis_instance = redis.Redis()
+    method_name = method.__qualname__
+    inputs_key = f"{method_name}:inputs"
+    outputs_key = f"{method_name}:outputs"
+
+    # Get the number of calls
+    calls_count = redis_instance.get(method_name)
+    calls_count = int(calls_count.decode('utf-8')) if calls_count else 0
+
+    print(f"{method_name} was called {calls_count} times:")
+
+    # Get inputs and outputs
+    inputs = redis_instance.lrange(inputs_key, 0, -1)
+    outputs = redis_instance.lrange(outputs_key, 0, -1)
+
+    # Display each call
+    for input_args, output in zip(inputs, outputs):
+        input_str = input_args.decode('utf-8')
+        output_str = output.decode('utf-8')
+        print(f"{method_name}{input_str} -> {output_str}")
