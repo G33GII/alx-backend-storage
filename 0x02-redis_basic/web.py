@@ -9,6 +9,7 @@ from typing import Callable
 # Create a Redis client
 redis_client = redis.Redis()
 
+
 def url_access_count(func: Callable) -> Callable:
     """Decorator to track how many times a URL is accessed"""
     @wraps(func)
@@ -20,6 +21,7 @@ def url_access_count(func: Callable) -> Callable:
         # Call the original function
         return func(url)
     return wrapper
+
 
 def cache_result(expiration: int = 10) -> Callable:
     """Decorator to cache the result of a function"""
@@ -42,6 +44,7 @@ def cache_result(expiration: int = 10) -> Callable:
             return result
         return wrapper
     return decorator
+
 
 @url_access_count
 @cache_result(10)
